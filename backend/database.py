@@ -13,8 +13,16 @@ SQLALCHEMY_DATABASE_URL = (
     or os.environ.get("POSTGRES_URL")
     or os.environ.get("POSTGRES_PRISMA_URL")
     or os.environ.get("POSTGRES_URL_NON_POOLING")
-    or "sqlite:///./generasjon_m.db"
+    or ""
 )
+
+# Uten database på Vercel: bruk SQLite i /tmp (den eneste skrivbare mappen),
+# så appen virker. Data der er midlertidige og kan forsvinne ved ny oppstart.
+MIDLERTIDIG_DATABASE = not SQLALCHEMY_DATABASE_URL and bool(os.environ.get("VERCEL"))
+if not SQLALCHEMY_DATABASE_URL:
+    SQLALCHEMY_DATABASE_URL = (
+        "sqlite:////tmp/generasjon_m.db" if MIDLERTIDIG_DATABASE else "sqlite:///./generasjon_m.db"
+    )
 
 # SQLAlchemy krever "postgresql://", mens Vercel/Neon ofte gir "postgres://"
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):

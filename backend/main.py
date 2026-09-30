@@ -14,7 +14,7 @@ import ai
 import eksport
 import logic
 import models
-from database import SQLALCHEMY_DATABASE_URL, SessionLocal, engine, get_db
+from database import MIDLERTIDIG_DATABASE, SQLALCHEMY_DATABASE_URL, SessionLocal, engine, get_db
 from migrering import migrer
 
 _db_init_error = None
@@ -35,16 +35,7 @@ except Exception as e:
 
 app = FastAPI(title="Generasjon M – M-venn-appen")
 
-# På Vercel finnes ingen skrivbar disk, så uten Postgres kan ingenting lagres
-_MANGLER_DATABASE = bool(os.environ.get("VERCEL")) and SQLALCHEMY_DATABASE_URL.startswith("sqlite")
-
-
 def _databasefeil_tekst(e: Exception) -> str:
-    if _MANGLER_DATABASE:
-        return (
-            "Ingen database er koblet til. Koble en Postgres-database til "
-            "Vercel-prosjektet (Storage) og deploy på nytt."
-        )
     return f"Databasefeil: {type(e).__name__}: {str(e).splitlines()[0][:300]}"
 
 
@@ -149,9 +140,10 @@ def _utfordring_ut(db: Session, u: models.Utfordring) -> dict:
 @app.get("/api/health")
 def health():
     return {
-        "ok": _db_init_error is None and not _MANGLER_DATABASE,
+        "ok": _db_init_error is None,
         "database": "postgres" if SQLALCHEMY_DATABASE_URL.startswith("postgresql") else "sqlite",
-        "feil": _databasefeil_tekst(Exception(_db_init_error)) if (_db_init_error or _MANGLER_DATABASE) else None,
+        "midlertidig_database": MIDLERTIDIG_DATABASE,
+        "feil": _db_init_error,
         "ai": ai.ai_tilgjengelig(),
     }
 

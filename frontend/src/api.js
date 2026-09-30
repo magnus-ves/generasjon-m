@@ -66,6 +66,7 @@ const qs = (params) => {
 };
 
 export const api = {
+  helse: () => request("/health"),
   institusjoner: () => request("/institusjoner"),
   ukasUtfordring: (instId) => request(`/institusjoner/${instId}/utfordring`),
   registrerBesok: (data) => post("/besok", data),

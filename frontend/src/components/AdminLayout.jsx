@@ -1,9 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { lagring } from "../api.js";
+import { api, lagring } from "../api.js";
 
 export default function AdminLayout() {
   const navigate = useNavigate();
+  const [helse, setHelse] = useState(null);
+
+  useEffect(() => {
+    api.helse().then(setHelse).catch(() => setHelse({ feil: "Får ikke kontakt med serveren." }));
+  }, []);
 
   useEffect(() => {
     const ut = () => navigate("/admin/logg-inn");
@@ -32,6 +37,15 @@ export default function AdminLayout() {
         </button>
       </nav>
       <main>
+        {helse?.feil && (
+          <div role="alert" className="melding feil">Databasen virker ikke: {helse.feil}</div>
+        )}
+        {helse?.midlertidig_database && (
+          <div role="status" className="melding feil">
+            Ingen database er koblet til, så alt lagres midlertidig og kan forsvinne. Koble en Postgres-database
+            til Vercel-prosjektet (Storage → Create Database) og deploy på nytt.
+          </div>
+        )}
         <Outlet />
       </main>
     </div>
