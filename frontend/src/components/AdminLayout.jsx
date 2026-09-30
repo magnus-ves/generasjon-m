@@ -26,6 +26,7 @@ export default function AdminLayout() {
         <NavLink to="/admin/utfordring">Ukas utfordring</NavLink>
         <NavLink to="/admin/maler">Utfordringsmaler</NavLink>
         <NavLink to="/admin/institusjoner">Institusjoner</NavLink>
+        <NavLink to="/admin/google-sheets">Google Sheets</NavLink>
         <button type="button" className="knapp sekundar" style={{ marginTop: 20 }} onClick={loggUt}>
           Logg ut
         </button>

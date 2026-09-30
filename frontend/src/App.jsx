@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard.jsx";
 import AdminUtfordring from "./pages/AdminUtfordring.jsx";
 import Maler from "./pages/Maler.jsx";
 import Institusjoner from "./pages/Institusjoner.jsx";
+import GoogleSheets from "./pages/GoogleSheets.jsx";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="utfordring" element={<AdminUtfordring />} />
         <Route path="maler" element={<Maler />} />
         <Route path="institusjoner" element={<Institusjoner />} />
+        <Route path="google-sheets" element={<GoogleSheets />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

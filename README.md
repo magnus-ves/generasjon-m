@@ -28,6 +28,7 @@ cd frontend && npm install && npm run dev   # http://localhost:5173
 |---|---|
 | `ADMIN_CODE` | Adminkoden. **Uten den er admin-delen åpen** – sett den før appen deles. |
 | `ANTHROPIC_API_KEY` | Slår på AI-tekster (Claude). Uten den brukes enkle maltekster. |
+| `EKSPORT_NOKKEL` | Slår på eksport til Google Sheets. En lang, tilfeldig tekst – den står i eksport-lenkene. |
 | `CLAUDE_MODEL` | Valgfritt, standard `claude-opus-5-5`. |
 | `DATABASE_URL` / `POSTGRES_URL` | Postgres i produksjon. Lokalt brukes SQLite. |
 
@@ -36,3 +37,11 @@ cd frontend && npm install && npm run dev   # http://localhost:5173
 Importer repoet i Vercel (Root Directory = repo-roten). `vercel.json` bygger frontend og backend som to
 tjenester på samme domene. Koble til en Postgres-database og sett variablene
 over.
+
+## Google Sheets
+
+Appen leverer tre CSV-tabeller som Google Sheets henter med
+`=IMPORTDATA("…")`: alle besøk, nøkkeltall per institusjon og ukas
+utfordringer. Arket oppdaterer seg selv (Google henter på nytt omtrent hver
+time). Sett `EKSPORT_NOKKEL`, og kopier ferdige formler fra
+**Admin → Google Sheets**.

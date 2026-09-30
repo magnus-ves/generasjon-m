@@ -4,13 +4,14 @@ from typing import List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
 
 import ai
+import eksport
 import logic
 import models
 from database import SQLALCHEMY_DATABASE_URL, SessionLocal, engine, get_db
@@ -354,3 +355,30 @@ def admin_oppsummering(
     data = logic.dashboard(db, institusjon_id, max(1, min(uker, 52)))
     data.pop("rå")
     return {"tekst": ai.oppsummering(data)}
+
+
+# ---------- Eksport til Google Sheets ----------
+
+
+@app.get("/api/eksport/{navn}.csv")
+def eksport_csv(navn: str, nokkel: str = "", db: Session = Depends(get_db)):
+    if not eksport.EKSPORT_NOKKEL:
+        raise HTTPException(403, "Eksport er ikke skrudd på (EKSPORT_NOKKEL mangler)")
+    if not eksport.nokkel_ok(nokkel):
+        raise HTTPException(403, "Feil eksportnøkkel")
+    if navn not in eksport.DATASETT:
+        raise HTTPException(404, "Ukjent eksport")
+    return Response(
+        eksport.DATASETT[navn][1](db),
+        media_type="text/csv; charset=utf-8",
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/api/admin/eksport")
+def eksport_info():
+    return {
+        "aktiv": bool(eksport.EKSPORT_NOKKEL),
+        "nokkel": eksport.EKSPORT_NOKKEL,
+        "datasett": [{"navn": k, "tittel": v[0]} for k, v in eksport.DATASETT.items()],
+    }

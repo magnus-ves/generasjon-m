@@ -92,4 +92,5 @@ export const api = {
   publiser: (data) => post("/admin/utfordringer/publiser", data),
   dashboard: (params) => request(`/admin/dashboard${qs(params)}`),
   oppsummering: (params) => request(`/admin/oppsummering${qs(params)}`),
+  eksport: () => request("/admin/eksport"),
 };
