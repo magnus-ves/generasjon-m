@@ -6,16 +6,19 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
 
 import ai
 import logic
 import models
-from database import SessionLocal, engine, get_db
+from database import SQLALCHEMY_DATABASE_URL, SessionLocal, engine, get_db
+from migrering import migrer
 
 _db_init_error = None
 try:
+    migrer(engine, models.Base.metadata)
     models.Base.metadata.create_all(bind=engine)
     with SessionLocal() as _db:
         if not _db.query(models.Utfordringsmal).count():
@@ -30,6 +33,23 @@ except Exception as e:
     _db_init_error = f"{type(e).__name__}: {e}"
 
 app = FastAPI(title="Generasjon M – M-venn-appen")
+
+# På Vercel finnes ingen skrivbar disk, så uten Postgres kan ingenting lagres
+_MANGLER_DATABASE = bool(os.environ.get("VERCEL")) and SQLALCHEMY_DATABASE_URL.startswith("sqlite")
+
+
+def _databasefeil_tekst(e: Exception) -> str:
+    if _MANGLER_DATABASE:
+        return (
+            "Ingen database er koblet til. Koble en Postgres-database til "
+            "Vercel-prosjektet (Storage) og deploy på nytt."
+        )
+    return f"Databasefeil: {type(e).__name__}: {str(e).splitlines()[0][:300]}"
+
+
+@app.exception_handler(SQLAlchemyError)
+async def databasefeil(request: Request, e: SQLAlchemyError):
+    return JSONResponse({"detail": _databasefeil_tekst(e)}, status_code=500)
 
 # Uten ADMIN_CODE er admin-delen åpen - sett den før appen deles.
 ADMIN_CODE = os.environ.get("ADMIN_CODE")
@@ -127,7 +147,12 @@ def _utfordring_ut(db: Session, u: models.Utfordring) -> dict:
 
 @app.get("/api/health")
 def health():
-    return {"ok": _db_init_error is None, "ai": ai.ai_tilgjengelig()}
+    return {
+        "ok": _db_init_error is None and not _MANGLER_DATABASE,
+        "database": "postgres" if SQLALCHEMY_DATABASE_URL.startswith("postgresql") else "sqlite",
+        "feil": _databasefeil_tekst(Exception(_db_init_error)) if (_db_init_error or _MANGLER_DATABASE) else None,
+        "ai": ai.ai_tilgjengelig(),
+    }
 
 
 @app.get("/api/institusjoner")
