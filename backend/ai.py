@@ -85,7 +85,7 @@ def oppsummering(data: dict) -> str:
     tekst = _spor(
         SYSTEM,
         "Skriv en kort oppsummering (3–5 setninger) av tallene under for en koordinator. "
-        "Pek på hva som går bra, hvilke avdelinger som trenger oppfølging, og ett konkret råd. "
+        "Pek på hva som går bra, hvilke institusjoner som trenger oppfølging, og ett konkret råd. "
         "Ikke finn på tall som ikke står her.\n\n" + json.dumps(data, ensure_ascii=False),
         max_tokens=3000,
     )

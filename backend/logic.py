@@ -27,12 +27,12 @@ def neste_uke(aar: int, uke: int) -> tuple[int, int]:
     return iso_uke(uke_start(aar, uke) + timedelta(days=7))
 
 
-def besok_i_uke(db: Session, avdeling_id: int, aar: int, uke: int):
+def besok_i_uke(db: Session, institusjon_id: int, aar: int, uke: int):
     start = uke_start(aar, uke)
     return (
         db.query(models.Besok)
         .filter(
-            models.Besok.avdeling_id == avdeling_id,
+            models.Besok.institusjon_id == institusjon_id,
             models.Besok.dato >= start,
             models.Besok.dato < start + timedelta(days=7),
         )
@@ -43,7 +43,7 @@ def besok_i_uke(db: Session, avdeling_id: int, aar: int, uke: int):
 def fremgang(db: Session, utfordring: models.Utfordring) -> int:
     return sum(
         b.utfordring_bidrag
-        for b in besok_i_uke(db, utfordring.avdeling_id, utfordring.aar, utfordring.uke)
+        for b in besok_i_uke(db, utfordring.institusjon_id, utfordring.aar, utfordring.uke)
     )
 
 
@@ -53,32 +53,32 @@ def er_fullfort(db: Session, utfordring: models.Utfordring) -> bool:
 
 def _grad(besok: list, beboere: dict) -> Optional[float]:
     verdier = [
-        b.deltakere / beboere[b.avdeling_id]
+        b.deltakere / beboere[b.institusjon_id]
         for b in besok
-        if beboere.get(b.avdeling_id)
+        if beboere.get(b.institusjon_id)
     ]
     return mean(verdier) if verdier else None
 
 
 def beregn_antall(
-    db: Session, avdeling: models.Avdeling, mal: models.Utfordringsmal, aar: int, uke: int
+    db: Session, institusjon: models.Institusjon, mal: models.Utfordringsmal, aar: int, uke: int
 ) -> tuple[int, str]:
-    """Returnerer (antall, begrunnelse) for en avdeling og målukens utfordring."""
-    alle_avd = db.query(models.Avdeling).all()
-    beboere = {a.id: a.antall_beboere for a in alle_avd}
-    snitt_beboere = mean(beboere.values()) if beboere else avdeling.antall_beboere
+    """Returnerer (antall, begrunnelse) for en institusjon og målukens utfordring."""
+    alle_inst = db.query(models.Institusjon).all()
+    beboere = {a.id: a.antall_beboere for a in alle_inst}
+    snitt_beboere = mean(beboere.values()) if beboere else institusjon.antall_beboere
 
     # 1) Størrelse
-    storrelse = avdeling.antall_beboere / snitt_beboere if snitt_beboere else 1
+    storrelse = institusjon.antall_beboere / snitt_beboere if snitt_beboere else 1
     storrelse = min(max(storrelse, 0.6), 1.5)
     if storrelse >= 1.15:
-        stor_tekst = "Stor avdeling"
+        stor_tekst = "Stor institusjon"
     elif storrelse <= 0.85:
-        stor_tekst = "Mindre avdeling"
+        stor_tekst = "Mindre institusjon"
     else:
         stor_tekst = "Gjennomsnittlig størrelse"
 
-    # 2) Deltakelse de siste 6 ukene, sammenlignet med alle avdelinger
+    # 2) Deltakelse de siste 6 ukene, sammenlignet med alle institusjoner
     fra = uke_start(aar, uke) - timedelta(weeks=UKER_DELTAKELSE)
     til = uke_start(aar, uke)
     siste = (
@@ -86,7 +86,7 @@ def beregn_antall(
         .filter(models.Besok.dato >= fra, models.Besok.dato < til)
         .all()
     )
-    egen = _grad([b for b in siste if b.avdeling_id == avdeling.id], beboere)
+    egen = _grad([b for b in siste if b.institusjon_id == institusjon.id], beboere)
     felles = _grad(siste, beboere)
     if egen is None or not felles:
         deltakelse = 1.0
@@ -104,7 +104,7 @@ def beregn_antall(
     tidligere = (
         db.query(models.Utfordring)
         .filter(
-            models.Utfordring.avdeling_id == avdeling.id,
+            models.Utfordring.institusjon_id == institusjon.id,
             models.Utfordring.status == "publisert",
             (models.Utfordring.aar * 100 + models.Utfordring.uke) < aar * 100 + uke,
         )
@@ -126,7 +126,7 @@ def beregn_antall(
             hist_tekst = "én av de to siste utfordringene ble fullført"
 
     antall = max(1, round(mal.basis * storrelse * deltakelse * historikk))
-    deler = [f"{stor_tekst} ({avdeling.antall_beboere} beboere)", delt_tekst]
+    deler = [f"{stor_tekst} ({institusjon.antall_beboere} beboere)", delt_tekst]
     if hist_tekst:
         deler.append(hist_tekst)
     begrunnelse = ", ".join(deler[:-1]) + " og " + deler[-1] + "."
@@ -170,7 +170,6 @@ STEMNING_NAVN = {1: "Tung", 2: "Litt lav", 3: "Helt ok", 4: "God", 5: "Strålend
 def dashboard(
     db: Session,
     institusjon_id: Optional[int],
-    avdeling_id: Optional[int],
     uker: int,
     idag: Optional[date] = None,
 ) -> dict:
@@ -178,22 +177,18 @@ def dashboard(
     denne = iso_uke(idag)
     forste_uke_start = uke_start(*denne) - timedelta(weeks=uker - 1)
 
-    alle_avd = db.query(models.Avdeling).all()
-    if institusjon_id:
-        avd_utvalg = [a for a in alle_avd if a.institusjon_id == institusjon_id]
-    else:
-        avd_utvalg = alle_avd
-    if avdeling_id:
-        avd_utvalg = [a for a in avd_utvalg if a.id == avdeling_id]
-    utvalg_ids = {a.id for a in avd_utvalg}
-    beboere = {a.id: a.antall_beboere for a in alle_avd}
+    alle_inst = db.query(models.Institusjon).all()
+    utvalg_ids = {
+        a.id for a in alle_inst if not institusjon_id or a.id == institusjon_id
+    }
+    beboere = {a.id: a.antall_beboere for a in alle_inst}
 
     alle_besok = (
         db.query(models.Besok)
         .filter(models.Besok.dato >= forste_uke_start, models.Besok.dato <= idag)
         .all()
     )
-    besok = [b for b in alle_besok if b.avdeling_id in utvalg_ids]
+    besok = [b for b in alle_besok if b.institusjon_id in utvalg_ids]
 
     denne_nokkel = denne[0] * 100 + denne[1]
     forste = iso_uke(forste_uke_start)
@@ -207,7 +202,7 @@ def dashboard(
     ]
 
     tall = _nokkeltall(
-        db, besok, beboere, [u for u in avsluttede if u.avdeling_id in utvalg_ids]
+        db, besok, beboere, [u for u in avsluttede if u.institusjon_id in utvalg_ids]
     )
 
     # Linjediagram: deltakere per besøk per uke, utvalg mot alle
@@ -229,25 +224,19 @@ def dashboard(
         "alle": per_uke(alle_besok),
     }
 
-    # Per avdeling (innenfor valgt institusjon)
-    rad_avd = (
-        [a for a in alle_avd if a.institusjon_id == institusjon_id]
-        if institusjon_id
-        else alle_avd
-    )
+    # Alle institusjoner, til sammenligning
     rader = []
-    for a in rad_avd:
+    for a in sorted(alle_inst, key=lambda a: a.navn):
         t = _nokkeltall(
             db,
-            [b for b in alle_besok if b.avdeling_id == a.id],
+            [b for b in alle_besok if b.institusjon_id == a.id],
             beboere,
-            [u for u in avsluttede if u.avdeling_id == a.id],
+            [u for u in avsluttede if u.institusjon_id == a.id],
         )
         rader.append(
             {
                 "id": a.id,
                 "navn": a.navn,
-                "institusjon": a.institusjon.navn,
                 "besok": t["besok"],
                 "dpb": _fmt(t["dpb"]),
                 "grad": _pst(t["grad"]),

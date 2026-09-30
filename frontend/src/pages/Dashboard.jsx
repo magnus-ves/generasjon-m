@@ -47,7 +47,7 @@ function Stolpediagram({ rader }) {
   const avstand = (B - 60) / Math.max(rader.length, 1);
   const trinn = [0, maks / 2, maks];
   return (
-    <svg viewBox={`0 0 ${B} 256`} role="img" aria-label="Stolpediagram: deltakelsesgrad per avdeling">
+    <svg viewBox={`0 0 ${B} 256`} role="img" aria-label="Stolpediagram: deltakelsesgrad per institusjon">
       {trinn.map((t) => {
         const yy = bunn - (t / maks) * hoyde;
         return (
@@ -76,7 +76,7 @@ function Stolpediagram({ rader }) {
 
 export default function Dashboard() {
   const [institusjoner, setInstitusjoner] = useState([]);
-  const [filter, setFilter] = useState({ institusjon_id: "", avdeling_id: "", uker: 12 });
+  const [filter, setFilter] = useState({ institusjon_id: "", uker: 12 });
   const [data, setData] = useState(null);
   const [feil, setFeil] = useState("");
   const [oppsummering, setOppsummering] = useState("");
@@ -92,8 +92,6 @@ export default function Dashboard() {
   }, [filter]);
 
   const inst = institusjoner.find((i) => String(i.id) === String(filter.institusjon_id));
-  const avdelinger = inst ? inst.avdelinger : institusjoner.flatMap((i) => i.avdelinger);
-  const valgtAvd = avdelinger.find((a) => String(a.id) === String(filter.avdeling_id));
 
   async function lagOppsummering() {
     setLagerOppsummering(true);
@@ -124,21 +122,13 @@ export default function Dashboard() {
         </section>
       )}
 
-      <div className="filtre">
+      <div className="filtre" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
         <div className="felt">
           <label htmlFor="fi">Institusjon</label>
           <select id="fi" className="inndata" value={filter.institusjon_id}
-            onChange={(e) => setFilter((f) => ({ ...f, institusjon_id: e.target.value, avdeling_id: "" }))}>
+            onChange={(e) => setFilter((f) => ({ ...f, institusjon_id: e.target.value }))}>
             <option value="">Alle</option>
             {institusjoner.map((i) => <option key={i.id} value={i.id}>{i.navn}</option>)}
-          </select>
-        </div>
-        <div className="felt">
-          <label htmlFor="fa">Avdeling</label>
-          <select id="fa" className="inndata" value={filter.avdeling_id}
-            onChange={(e) => setFilter((f) => ({ ...f, avdeling_id: e.target.value }))}>
-            <option value="">Alle</option>
-            {avdelinger.map((a) => <option key={a.id} value={a.id}>{a.navn}</option>)}
           </select>
         </div>
         <div className="felt">
@@ -165,34 +155,34 @@ export default function Dashboard() {
           <div className="diagrammer">
             <section className="kort">
               <h2 style={{ fontSize: 20 }}>Deltakere per besøk over tid</h2>
-              <p className="undertekst">Snitt per uke, sammenlignet med alle avdelinger</p>
+              <p className="undertekst">Snitt per uke, sammenlignet med alle institusjoner</p>
               <div className="forklaring">
-                <span><span style={{ width: 16, height: 3, background: "var(--primar)" }} />{valgtAvd?.navn || inst?.navn || "Utvalg"}</span>
-                <span><span style={{ width: 16, height: 0, borderTop: "3px dashed var(--aksent)" }} />Alle avdelinger</span>
+                <span><span style={{ width: 16, height: 3, background: "var(--primar)" }} />{inst?.navn || "Alle institusjoner"}</span>
+                <span><span style={{ width: 16, height: 0, borderTop: "3px dashed var(--aksent)" }} />Alle institusjoner</span>
               </div>
               <Linjediagram linje={data.linje} />
             </section>
             <section className="kort">
-              <h2 style={{ fontSize: 20 }}>Deltakelsesgrad per avdeling</h2>
+              <h2 style={{ fontSize: 20 }}>Deltakelsesgrad per institusjon</h2>
               <p className="undertekst">Andel av beboerne som deltar per besøk</p>
-              {data.rader.length ? <Stolpediagram rader={data.rader} /> : <p className="hjelp" style={{ marginTop: 12 }}>Ingen avdelinger ennå.</p>}
+              {data.rader.length ? <Stolpediagram rader={data.rader} /> : <p className="hjelp" style={{ marginTop: 12 }}>Ingen institusjoner ennå.</p>}
             </section>
           </div>
 
           <section>
-            <h2 style={{ fontSize: 24 }}>Sammenligning av avdelinger</h2>
+            <h2 style={{ fontSize: 24 }}>Sammenligning av institusjoner</h2>
             <div className="tabell-rulle" style={{ marginTop: 12 }}>
               <table className="tabell">
                 <thead>
                   <tr>
-                    <th>Avdeling</th><th>Besøk</th><th>Deltakere/besøk</th><th>Deltakelsesgrad</th>
+                    <th>Institusjon</th><th>Besøk</th><th>Deltakere/besøk</th><th>Deltakelsesgrad</th>
                     <th>Stemning</th><th>Mål oppnådd</th><th>Utfordringer fullført</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.rader.map((r) => (
                     <tr key={r.id}>
-                      <td>{r.navn}{!inst && <span style={{ fontWeight: 600, color: "var(--dempet)" }}> · {r.institusjon}</span>}</td>
+                      <td>{r.navn}</td>
                       <td>{r.besok}</td><td>{r.dpb}</td><td>{r.grad}</td>
                       <td>{r.stemning}</td><td>{r.maal}</td><td>{r.utf}</td>
                     </tr>

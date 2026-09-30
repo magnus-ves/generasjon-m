@@ -1,7 +1,7 @@
 const BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 const ADMIN_KEY = "genm_admin_code";
-const AVD_KEY = "genm_avdeling";
+const INST_KEY = "genm_institusjon";
 
 function les(key) {
   try {
@@ -23,11 +23,11 @@ function skriv(key, verdi) {
 export const lagring = {
   adminKode: () => les(ADMIN_KEY) || "",
   settAdminKode: (k) => skriv(ADMIN_KEY, k),
-  avdeling: () => {
-    const v = les(AVD_KEY);
+  institusjon: () => {
+    const v = les(INST_KEY);
     return v ? Number(v) : null;
   },
-  settAvdeling: (id) => skriv(AVD_KEY, id == null ? null : String(id)),
+  settInstitusjon: (id) => skriv(INST_KEY, id == null ? null : String(id)),
 };
 
 async function request(path, options = {}) {
@@ -67,7 +67,7 @@ const qs = (params) => {
 
 export const api = {
   institusjoner: () => request("/institusjoner"),
-  ukasUtfordring: (avdId) => request(`/avdelinger/${avdId}/utfordring`),
+  ukasUtfordring: (instId) => request(`/institusjoner/${instId}/utfordring`),
   registrerBesok: (data) => post("/besok", data),
   maalforslag: (data) => post("/maalforslag", data),
 
@@ -81,9 +81,6 @@ export const api = {
   nyInstitusjon: (data) => post("/admin/institusjoner", data),
   endreInstitusjon: (id, data) => put(`/admin/institusjoner/${id}`, data),
   slettInstitusjon: (id) => del(`/admin/institusjoner/${id}`),
-  nyAvdeling: (data) => post("/admin/avdelinger", data),
-  endreAvdeling: (id, data) => put(`/admin/avdelinger/${id}`, data),
-  slettAvdeling: (id) => del(`/admin/avdelinger/${id}`),
   maler: () => request("/admin/maler"),
   nyMal: (data) => post("/admin/maler", data),
   endreMal: (id, data) => put(`/admin/maler/${id}`, data),

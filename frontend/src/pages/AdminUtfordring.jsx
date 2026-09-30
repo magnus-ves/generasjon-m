@@ -16,7 +16,7 @@ function Utkast({ u, onLagret }) {
   return (
     <article className="kort skygge">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>{u.avdeling} · {u.institusjon}</h3>
+        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>{u.institusjon}</h3>
         <span className={`merke ${u.status}`}>{u.status}</span>
       </div>
       <div className="utkast-grid">

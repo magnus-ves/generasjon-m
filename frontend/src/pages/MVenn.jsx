@@ -6,14 +6,11 @@ import { Gnist, Pluss } from "../components/Ikoner.jsx";
 function Velger({ onValgt }) {
   const [institusjoner, setInstitusjoner] = useState(null);
   const [instId, setInstId] = useState("");
-  const [avdId, setAvdId] = useState("");
   const [feil, setFeil] = useState("");
 
   useEffect(() => {
     api.institusjoner().then(setInstitusjoner).catch((e) => setFeil(e.message));
   }, []);
-
-  const inst = institusjoner?.find((i) => String(i.id) === instId);
 
   return (
     <div className="stakk" style={{ marginTop: 24, gap: 20 }}>
@@ -24,19 +21,12 @@ function Velger({ onValgt }) {
       )}
       <div className="felt">
         <label htmlFor="inst">Institusjon</label>
-        <select id="inst" className="inndata" value={instId} onChange={(e) => { setInstId(e.target.value); setAvdId(""); }}>
+        <select id="inst" className="inndata" value={instId} onChange={(e) => setInstId(e.target.value)}>
           <option value="">Velg institusjon</option>
           {institusjoner?.map((i) => <option key={i.id} value={i.id}>{i.navn}</option>)}
         </select>
       </div>
-      <div className="felt">
-        <label htmlFor="avd">Avdeling</label>
-        <select id="avd" className="inndata" value={avdId} disabled={!inst} onChange={(e) => setAvdId(e.target.value)}>
-          <option value="">Velg avdeling</option>
-          {inst?.avdelinger.map((a) => <option key={a.id} value={a.id}>{a.navn}</option>)}
-        </select>
-      </div>
-      <button type="button" className="knapp stor" disabled={!avdId} onClick={() => onValgt(Number(avdId))}>
+      <button type="button" className="knapp stor" disabled={!instId} onClick={() => onValgt(Number(instId))}>
         Fortsett
       </button>
     </div>
@@ -44,32 +34,32 @@ function Velger({ onValgt }) {
 }
 
 export default function MVenn() {
-  const [avdId, setAvdId] = useState(lagring.avdeling());
+  const [instId, setInstId] = useState(lagring.institusjon());
   const [data, setData] = useState(null);
   const [feil, setFeil] = useState("");
   const location = useLocation();
   const registrert = location.state?.registrert;
 
   useEffect(() => {
-    if (!avdId) return;
+    if (!instId) return;
     setData(null);
-    api.ukasUtfordring(avdId).then(setData).catch((e) => {
-      // Avdelingen kan ha blitt slettet - be om nytt valg
-      lagring.settAvdeling(null);
-      setAvdId(null);
+    api.ukasUtfordring(instId).then(setData).catch((e) => {
+      // Institusjonen kan ha blitt slettet - be om nytt valg
+      lagring.settInstitusjon(null);
+      setInstId(null);
       setFeil(e.message);
     });
-  }, [avdId]);
+  }, [instId]);
 
   function velg(id) {
-    lagring.settAvdeling(id);
+    lagring.settInstitusjon(id);
     setFeil("");
-    setAvdId(id);
+    setInstId(id);
   }
 
   function bytt() {
-    lagring.settAvdeling(null);
-    setAvdId(null);
+    lagring.settInstitusjon(null);
+    setInstId(null);
   }
 
   const u = data?.utfordring;
@@ -78,7 +68,7 @@ export default function MVenn() {
   return (
     <div className="mobil">
       <Link to="/" className="logo-plass" style={{ width: 128, height: 36, fontSize: 12 }}>[Logo]</Link>
-      {!avdId ? (
+      {!instId ? (
         <>
           {feil && <div role="alert" className="melding feil" style={{ marginTop: 20 }}>{feil}</div>}
           <Velger onValgt={velg} />
@@ -88,10 +78,7 @@ export default function MVenn() {
       ) : (
         <>
           <div style={{ marginTop: 24, display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-            <div>
-              <h1 style={{ fontSize: 30 }}>{data.institusjon}</h1>
-              <p style={{ fontSize: 18, color: "var(--dempet)" }}>{data.avdeling.navn}</p>
-            </div>
+            <h1 style={{ fontSize: 30 }}>{data.institusjon.navn}</h1>
             <button type="button" className="lenkeknapp" onClick={bytt}>Bytt institusjon</button>
           </div>
 

@@ -60,7 +60,7 @@ export default function Maler() {
       <div>
         <h1 style={{ fontSize: 32 }}>Utfordringsmaler</h1>
         <p className="ingress">
-          Skriv <strong>{"{antall}"}</strong> der tallet skal stå. Basis er antallet for en gjennomsnittlig avdeling – det justeres automatisk per avdeling.
+          Skriv <strong>{"{antall}"}</strong> der tallet skal stå. Basis er antallet for en gjennomsnittlig institusjon – det justeres automatisk per institusjon.
         </p>
       </div>
       {maler.map((m) => <MalRad key={`${m.id}-${m.tekst}-${m.basis}`} mal={m} onEndret={last} />)}

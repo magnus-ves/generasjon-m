@@ -3,15 +3,15 @@
 App for M-venner som besøker beboere på institusjoner, bygget etter designet
 «Generasjon M – M-venn-appen».
 
-- **M-venn (mobil):** velg institusjon og avdeling, se ukas utfordring med
+- **M-venn (mobil):** velg institusjon, se ukas utfordring med
   fremgang, og registrer besøk (deltakere, M-venner, aktivitet, stemning, mål
   og om målet ble nådd). Er målet vagt, foreslås et mer konkret mål.
 - **Admin (desktop):** dashboard med nøkkeltall, grafer og sammenligning av
-  avdelinger (+ AI-oppsummering), generering og publisering av ukas utfordring,
-  utfordringsmaler og institusjoner/avdelinger.
+  institusjoner (+ AI-oppsummering), generering og publisering av ukas utfordring,
+  utfordringsmaler og institusjoner.
 
 Antallet i ukas utfordring beregnes i kode (`backend/logic.py`) ut fra
-avdelingens størrelse, deltakelse de siste 6 ukene og om de to forrige
+institusjonens størrelse, deltakelse de siste 6 ukene og om de to forrige
 utfordringene ble fullført. AI skriver bare teksten – en AI-tekst som ikke
 inneholder nøyaktig det beregnede tallet forkastes.
 

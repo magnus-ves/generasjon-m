@@ -59,14 +59,9 @@ app.add_middleware(
 # ---------- Skjemaer ----------
 
 
-class AvdelingIn(BaseModel):
-    navn: str = Field(min_length=1)
-    institusjon_id: int
-    antall_beboere: int = Field(ge=1)
-
-
 class InstitusjonIn(BaseModel):
     navn: str = Field(min_length=1)
+    antall_beboere: int = Field(ge=1)
 
 
 class MalIn(BaseModel):
@@ -75,7 +70,7 @@ class MalIn(BaseModel):
 
 
 class BesokIn(BaseModel):
-    avdeling_id: int
+    institusjon_id: int
     dato: date
     deltakere: int = Field(ge=0)
     mvenner: int = Field(ge=1)
@@ -108,21 +103,15 @@ class UtfordringEndring(BaseModel):
     tekst: Optional[str] = None
 
 
-def _avdeling_ut(a: models.Avdeling) -> dict:
-    return {
-        "id": a.id,
-        "navn": a.navn,
-        "institusjon_id": a.institusjon_id,
-        "antall_beboere": a.antall_beboere,
-    }
+def _institusjon_ut(i: models.Institusjon) -> dict:
+    return {"id": i.id, "navn": i.navn, "antall_beboere": i.antall_beboere}
 
 
 def _utfordring_ut(db: Session, u: models.Utfordring) -> dict:
     return {
         "id": u.id,
-        "avdeling_id": u.avdeling_id,
-        "avdeling": u.avdeling.navn,
-        "institusjon": u.avdeling.institusjon.navn,
+        "institusjon_id": u.institusjon_id,
+        "institusjon": u.institusjon.navn,
         "aar": u.aar,
         "uke": u.uke,
         "antall": u.antall,
@@ -144,29 +133,24 @@ def health():
 @app.get("/api/institusjoner")
 def list_institusjoner(db: Session = Depends(get_db)):
     return [
-        {
-            "id": i.id,
-            "navn": i.navn,
-            "avdelinger": [_avdeling_ut(a) for a in sorted(i.avdelinger, key=lambda a: a.navn)],
-        }
+        _institusjon_ut(i)
         for i in db.query(models.Institusjon).order_by(models.Institusjon.navn).all()
     ]
 
 
-@app.get("/api/avdelinger/{avdeling_id}/utfordring")
-def ukas_utfordring(avdeling_id: int, db: Session = Depends(get_db)):
-    avd = db.get(models.Avdeling, avdeling_id)
-    if not avd:
-        raise HTTPException(404, "Fant ikke avdelingen")
+@app.get("/api/institusjoner/{institusjon_id}/utfordring")
+def ukas_utfordring(institusjon_id: int, db: Session = Depends(get_db)):
+    inst = db.get(models.Institusjon, institusjon_id)
+    if not inst:
+        raise HTTPException(404, "Fant ikke institusjonen")
     aar, uke = logic.iso_uke(date.today())
     u = (
         db.query(models.Utfordring)
-        .filter_by(avdeling_id=avdeling_id, aar=aar, uke=uke, status="publisert")
+        .filter_by(institusjon_id=institusjon_id, aar=aar, uke=uke, status="publisert")
         .first()
     )
     return {
-        "avdeling": _avdeling_ut(avd),
-        "institusjon": avd.institusjon.navn,
+        "institusjon": _institusjon_ut(inst),
         "uke": uke,
         "utfordring": _utfordring_ut(db, u) if u else None,
     }
@@ -174,8 +158,8 @@ def ukas_utfordring(avdeling_id: int, db: Session = Depends(get_db)):
 
 @app.post("/api/besok")
 def registrer_besok(data: BesokIn, db: Session = Depends(get_db)):
-    if not db.get(models.Avdeling, data.avdeling_id):
-        raise HTTPException(404, "Fant ikke avdelingen")
+    if not db.get(models.Institusjon, data.institusjon_id):
+        raise HTTPException(404, "Fant ikke institusjonen")
     b = models.Besok(**data.model_dump())
     db.add(b)
     db.commit()
@@ -198,7 +182,7 @@ def admin_login():
 
 @app.post("/api/admin/institusjoner")
 def ny_institusjon(data: InstitusjonIn, db: Session = Depends(get_db)):
-    i = models.Institusjon(navn=data.navn.strip())
+    i = models.Institusjon(navn=data.navn.strip(), antall_beboere=data.antall_beboere)
     db.add(i)
     db.commit()
     return {"id": i.id}
@@ -208,6 +192,7 @@ def ny_institusjon(data: InstitusjonIn, db: Session = Depends(get_db)):
 def endre_institusjon(iid: int, data: InstitusjonIn, db: Session = Depends(get_db)):
     i = db.get(models.Institusjon, iid) or _404()
     i.navn = data.navn.strip()
+    i.antall_beboere = data.antall_beboere
     db.commit()
     return {"ok": True}
 
@@ -215,42 +200,11 @@ def endre_institusjon(iid: int, data: InstitusjonIn, db: Session = Depends(get_d
 @app.delete("/api/admin/institusjoner/{iid}")
 def slett_institusjon(iid: int, db: Session = Depends(get_db)):
     i = db.get(models.Institusjon, iid) or _404()
-    for a in i.avdelinger:
-        _slett_avdeling_data(db, a.id)
+    db.query(models.Besok).filter_by(institusjon_id=iid).delete()
+    db.query(models.Utfordring).filter_by(institusjon_id=iid).delete()
     db.delete(i)
     db.commit()
     return {"ok": True}
-
-
-@app.post("/api/admin/avdelinger")
-def ny_avdeling(data: AvdelingIn, db: Session = Depends(get_db)):
-    a = models.Avdeling(**data.model_dump())
-    db.add(a)
-    db.commit()
-    return {"id": a.id}
-
-
-@app.put("/api/admin/avdelinger/{aid}")
-def endre_avdeling(aid: int, data: AvdelingIn, db: Session = Depends(get_db)):
-    a = db.get(models.Avdeling, aid) or _404()
-    for k, v in data.model_dump().items():
-        setattr(a, k, v)
-    db.commit()
-    return {"ok": True}
-
-
-@app.delete("/api/admin/avdelinger/{aid}")
-def slett_avdeling(aid: int, db: Session = Depends(get_db)):
-    a = db.get(models.Avdeling, aid) or _404()
-    _slett_avdeling_data(db, aid)
-    db.delete(a)
-    db.commit()
-    return {"ok": True}
-
-
-def _slett_avdeling_data(db: Session, aid: int):
-    db.query(models.Besok).filter_by(avdeling_id=aid).delete()
-    db.query(models.Utfordring).filter_by(avdeling_id=aid).delete()
 
 
 def _404():
@@ -307,24 +261,24 @@ def uker():
 @app.get("/api/admin/utfordringer")
 def list_utfordringer(aar: int, uke: int, db: Session = Depends(get_db)):
     liste = db.query(models.Utfordring).filter_by(aar=aar, uke=uke).all()
-    liste.sort(key=lambda u: (u.avdeling.institusjon.navn, u.avdeling.navn))
+    liste.sort(key=lambda u: u.institusjon.navn)
     return [_utfordring_ut(db, u) for u in liste]
 
 
 @app.post("/api/admin/utfordringer/generer")
 def generer(data: GenererIn, db: Session = Depends(get_db)):
     mal = db.get(models.Utfordringsmal, data.mal_id) or _404()
-    for avd in db.query(models.Avdeling).all():
+    for inst in db.query(models.Institusjon).all():
         eksisterende = (
             db.query(models.Utfordring)
-            .filter_by(avdeling_id=avd.id, aar=data.aar, uke=data.uke)
+            .filter_by(institusjon_id=inst.id, aar=data.aar, uke=data.uke)
             .first()
         )
         if eksisterende and eksisterende.status == "publisert":
             continue
-        antall, begrunnelse = logic.beregn_antall(db, avd, mal, data.aar, data.uke)
+        antall, begrunnelse = logic.beregn_antall(db, inst, mal, data.aar, data.uke)
         tekst = ai.utfordringstekst(mal.tekst, antall)
-        u = eksisterende or models.Utfordring(avdeling_id=avd.id, aar=data.aar, uke=data.uke)
+        u = eksisterende or models.Utfordring(institusjon_id=inst.id, aar=data.aar, uke=data.uke)
         u.mal_id, u.antall, u.tekst, u.begrunnelse, u.status = (
             mal.id, antall, tekst, begrunnelse, "utkast",
         )
@@ -358,11 +312,10 @@ def publiser(data: UkeIn, db: Session = Depends(get_db)):
 @app.get("/api/admin/dashboard")
 def admin_dashboard(
     institusjon_id: Optional[int] = None,
-    avdeling_id: Optional[int] = None,
     uker: int = 12,
     db: Session = Depends(get_db),
 ):
-    data = logic.dashboard(db, institusjon_id, avdeling_id, max(1, min(uker, 52)))
+    data = logic.dashboard(db, institusjon_id, max(1, min(uker, 52)))
     data.pop("rå")
     return data
 
@@ -370,10 +323,9 @@ def admin_dashboard(
 @app.get("/api/admin/oppsummering")
 def admin_oppsummering(
     institusjon_id: Optional[int] = None,
-    avdeling_id: Optional[int] = None,
     uker: int = 12,
     db: Session = Depends(get_db),
 ):
-    data = logic.dashboard(db, institusjon_id, avdeling_id, max(1, min(uker, 52)))
+    data = logic.dashboard(db, institusjon_id, max(1, min(uker, 52)))
     data.pop("rå")
     return {"tekst": ai.oppsummering(data)}

@@ -34,7 +34,7 @@ function Teller({ id, label, verdi, onChange, min = 0, hjelp }) {
 }
 
 export default function Registrer() {
-  const avdId = lagring.avdeling();
+  const instId = lagring.institusjon();
   const navigate = useNavigate();
   const [info, setInfo] = useState(null);
   const [skjema, setSkjema] = useState({
@@ -53,10 +53,10 @@ export default function Registrer() {
   const [sender, setSender] = useState(false);
 
   useEffect(() => {
-    if (avdId) api.ukasUtfordring(avdId).then(setInfo).catch(() => {});
-  }, [avdId]);
+    if (instId) api.ukasUtfordring(instId).then(setInfo).catch(() => {});
+  }, [instId]);
 
-  if (!avdId) return <Navigate to="/mvenn" replace />;
+  if (!instId) return <Navigate to="/mvenn" replace />;
 
   const sett = (felt) => (verdi) => setSkjema((s) => ({ ...s, [felt]: verdi }));
 
@@ -87,7 +87,7 @@ export default function Registrer() {
     setSender(true);
     setFeil("");
     try {
-      await api.registrerBesok({ ...skjema, avdeling_id: avdId });
+      await api.registrerBesok({ ...skjema, institusjon_id: instId });
       navigate("/mvenn", { state: { registrert: true } });
     } catch (err) {
       setFeil(err.message);
@@ -104,7 +104,7 @@ export default function Registrer() {
         <h1 style={{ marginTop: 4, fontSize: 30 }}>Registrer besøk</h1>
         {info && (
           <p style={{ marginTop: 4, fontSize: 18, color: "var(--dempet)" }}>
-            {info.avdeling.navn} · {info.institusjon}
+            {info.institusjon.navn}
           </p>
         )}
       </div>

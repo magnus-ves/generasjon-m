@@ -11,21 +11,7 @@ class Institusjon(Base):
 
     id = Column(Integer, primary_key=True)
     navn = Column(String(200), nullable=False)
-
-    avdelinger = relationship(
-        "Avdeling", back_populates="institusjon", cascade="all, delete-orphan"
-    )
-
-
-class Avdeling(Base):
-    __tablename__ = "avdelinger"
-
-    id = Column(Integer, primary_key=True)
-    navn = Column(String(200), nullable=False)
-    institusjon_id = Column(Integer, ForeignKey("institusjoner.id"), nullable=False)
     antall_beboere = Column(Integer, nullable=False, default=10)
-
-    institusjon = relationship("Institusjon", back_populates="avdelinger")
 
 
 class Utfordringsmal(Base):
@@ -41,7 +27,7 @@ class Utfordring(Base):
     __tablename__ = "utfordringer"
 
     id = Column(Integer, primary_key=True)
-    avdeling_id = Column(Integer, ForeignKey("avdelinger.id"), nullable=False)
+    institusjon_id = Column(Integer, ForeignKey("institusjoner.id"), nullable=False)
     mal_id = Column(Integer, ForeignKey("utfordringsmaler.id"), nullable=True)
     aar = Column(Integer, nullable=False)
     uke = Column(Integer, nullable=False)
@@ -50,14 +36,14 @@ class Utfordring(Base):
     begrunnelse = Column(Text, default="")
     status = Column(String(20), nullable=False, default="utkast")  # utkast | publisert
 
-    avdeling = relationship("Avdeling")
+    institusjon = relationship("Institusjon")
 
 
 class Besok(Base):
     __tablename__ = "besok"
 
     id = Column(Integer, primary_key=True)
-    avdeling_id = Column(Integer, ForeignKey("avdelinger.id"), nullable=False)
+    institusjon_id = Column(Integer, ForeignKey("institusjoner.id"), nullable=False)
     dato = Column(Date, nullable=False)
     deltakere = Column(Integer, nullable=False)
     mvenner = Column(Integer, nullable=False, default=1)
@@ -70,5 +56,5 @@ class Besok(Base):
     utfordring_bidrag = Column(Integer, nullable=False, default=0)
     opprettet = Column(DateTime, default=datetime.utcnow)
 
-    avdeling = relationship("Avdeling")
+    institusjon = relationship("Institusjon")
 
