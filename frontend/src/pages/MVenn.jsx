@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { api, lagring } from "../api.js";
-import { Gnist, Pluss } from "../components/Ikoner.jsx";
+import { Gnist } from "../components/Ikoner.jsx";
 
 function Velger({ onValgt }) {
   const [institusjoner, setInstitusjoner] = useState(null);
@@ -37,8 +37,6 @@ export default function MVenn() {
   const [instId, setInstId] = useState(lagring.institusjon());
   const [data, setData] = useState(null);
   const [feil, setFeil] = useState("");
-  const location = useLocation();
-  const registrert = location.state?.registrert;
 
   useEffect(() => {
     if (!instId) return;
@@ -63,7 +61,6 @@ export default function MVenn() {
   }
 
   const u = data?.utfordring;
-  const andel = u ? Math.min(100, Math.round((u.fremgang / u.antall) * 100)) : 0;
 
   return (
     <div className="mobil">
@@ -82,12 +79,6 @@ export default function MVenn() {
             <button type="button" className="lenkeknapp" onClick={bytt}>Bytt institusjon</button>
           </div>
 
-          {registrert && (
-            <div role="status" className="melding ok" style={{ marginTop: 20 }}>
-              Takk! Besøket er registrert. Det du gjør betyr noe.
-            </div>
-          )}
-
           <section aria-label="Ukas utfordring" className="utfordring" style={{ marginTop: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <p className="overlinje">Ukas utfordring · uke {data.uke}</p>
@@ -100,15 +91,6 @@ export default function MVenn() {
                   <span style={{ paddingBottom: 12, fontSize: 18, fontWeight: 700 }}>beboere</span>
                 </div>
                 <p style={{ marginTop: 12, fontSize: 20, fontWeight: 700, lineHeight: 1.35 }}>{u.tekst}</p>
-                <div style={{ marginTop: 20 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 16, fontWeight: 600 }}>
-                    <span>Så langt denne uken</span>
-                    <span>{u.fremgang} av {u.antall}</span>
-                  </div>
-                  <div className="framdrift" role="progressbar" aria-valuemin={0} aria-valuemax={u.antall} aria-valuenow={u.fremgang}>
-                    <div style={{ width: `${andel}%` }} />
-                  </div>
-                </div>
               </>
             ) : (
               <p style={{ marginTop: 12, fontSize: 20, fontWeight: 700, lineHeight: 1.35 }}>
@@ -116,13 +98,6 @@ export default function MVenn() {
               </p>
             )}
           </section>
-
-          <Link to="/mvenn/registrer" className="knapp stor" style={{ marginTop: 24 }}>
-            <Pluss />Registrer besøk
-          </Link>
-          <p style={{ marginTop: 12, textAlign: "center", color: "var(--dempet)", fontSize: 16 }}>
-            Tar 15 minutter – gjør det gjerne rett etter besøket.
-          </p>
         </>
       )}
     </div>

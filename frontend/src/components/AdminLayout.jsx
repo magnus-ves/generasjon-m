@@ -27,10 +27,10 @@ export default function AdminLayout() {
     <div className="admin">
       <nav aria-label="Adminmeny">
         <div className="logo-plass" style={{ width: 150, height: 40, fontSize: 12, marginBottom: 20 }}>[Logo]</div>
-        <NavLink to="/admin/dashboard">Dashboard</NavLink>
         <NavLink to="/admin/utfordring">Ukas utfordring</NavLink>
         <NavLink to="/admin/maler">Utfordringsmaler</NavLink>
         <NavLink to="/admin/institusjoner">Institusjoner</NavLink>
+        <NavLink to="/admin/besokstall">Besøkstall</NavLink>
         <NavLink to="/admin/google-sheets">Google Sheets</NavLink>
         <button type="button" className="knapp sekundar" style={{ marginTop: 20 }} onClick={loggUt}>
           Logg ut

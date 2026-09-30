@@ -69,8 +69,6 @@ export const api = {
   helse: () => request("/health"),
   institusjoner: () => request("/institusjoner"),
   ukasUtfordring: (instId) => request(`/institusjoner/${instId}/utfordring`),
-  registrerBesok: (data) => post("/besok", data),
-  maalforslag: (data) => post("/maalforslag", data),
 
   adminLogin: async (kode) => {
     const res = await fetch(`${BASE_URL}/admin/login`, {
@@ -91,7 +89,25 @@ export const api = {
   generer: (data) => post("/admin/utfordringer/generer", data),
   endreUtfordring: (id, data) => put(`/admin/utfordringer/${id}`, data),
   publiser: (data) => post("/admin/utfordringer/publiser", data),
-  dashboard: (params) => request(`/admin/dashboard${qs(params)}`),
-  oppsummering: (params) => request(`/admin/oppsummering${qs(params)}`),
+  besokstall: () => request("/admin/besokstall"),
+  slettBesokstall: (id) => del(`/admin/besokstall/${id}`),
+  importerBesokstall: (fil) =>
+    request("/admin/besokstall/import", {
+      method: "POST",
+      body: fil,
+      headers: { "Content-Type": "text/csv" },
+    }),
+  lastNedMal: async () => {
+    const res = await fetch(`${BASE_URL}/admin/besokstall/mal.csv`, {
+      headers: { "X-Admin-Code": lagring.adminKode() },
+    });
+    if (!res.ok) throw new Error(`Feil (${res.status})`);
+    const url = URL.createObjectURL(await res.blob());
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "besokstall-mal.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  },
   eksport: () => request("/admin/eksport"),
 };

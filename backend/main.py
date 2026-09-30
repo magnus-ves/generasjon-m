@@ -12,10 +12,11 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 import ai
 import eksport
+import import_besokstall
 import logic
 import models
 from database import SCHEMA, SCHEMA_FEIL, MIDLERTIDIG_DATABASE, SQLALCHEMY_DATABASE_URL, SessionLocal, engine, get_db
-from migrering import migrer
+from migrering import legg_til_manglende_kolonner, migrer
 
 _db_init_error = SCHEMA_FEIL
 try:
@@ -23,6 +24,7 @@ try:
         # Eget Postgres-skjema starter tomt; bare SQLite kan ha gamle tabeller
         migrer(engine, models.Base.metadata)
     models.Base.metadata.create_all(bind=engine)
+    legg_til_manglende_kolonner(engine, SCHEMA)
     with SessionLocal() as _db:
         if not _db.query(models.Utfordringsmal).count():
             _db.add(
@@ -83,24 +85,6 @@ class MalIn(BaseModel):
     basis: int = Field(ge=1, le=50)
 
 
-class BesokIn(BaseModel):
-    institusjon_id: int
-    dato: date
-    deltakere: int = Field(ge=0)
-    mvenner: int = Field(ge=1)
-    aktivitet: str = ""
-    stemning: int = Field(ge=1, le=5)
-    maal: str = ""
-    maal_oppnadd: str = Field(default="", pattern="^(ja|delvis|nei|)$")
-    utfordring_bidrag: int = Field(default=0, ge=0)
-
-
-class MaalforslagIn(BaseModel):
-    maal: str = ""
-    aktivitet: str = ""
-    deltakere: int = 0
-
-
 class GenererIn(BaseModel):
     mal_id: int
     aar: int
@@ -115,6 +99,9 @@ class UkeIn(BaseModel):
 class UtfordringEndring(BaseModel):
     antall: Optional[int] = Field(default=None, ge=1)
     tekst: Optional[str] = None
+    # True = klarte det, False = klarte det ikke, "nullstill" via fullfort_nullstill
+    fullfort: Optional[bool] = None
+    fullfort_nullstill: bool = False
 
 
 def _institusjon_ut(i: models.Institusjon) -> dict:
@@ -132,7 +119,7 @@ def _utfordring_ut(db: Session, u: models.Utfordring) -> dict:
         "tekst": u.tekst,
         "begrunnelse": u.begrunnelse,
         "status": u.status,
-        "fremgang": logic.fremgang(db, u),
+        "fullfort": u.fullfort,
     }
 
 
@@ -176,21 +163,6 @@ def ukas_utfordring(institusjon_id: int, db: Session = Depends(get_db)):
     }
 
 
-@app.post("/api/besok")
-def registrer_besok(data: BesokIn, db: Session = Depends(get_db)):
-    if not db.get(models.Institusjon, data.institusjon_id):
-        raise HTTPException(404, "Fant ikke institusjonen")
-    b = models.Besok(**data.model_dump())
-    db.add(b)
-    db.commit()
-    return {"id": b.id}
-
-
-@app.post("/api/maalforslag")
-def maalforslag(data: MaalforslagIn):
-    return {"forslag": ai.konkret_maal(data.maal, data.aktivitet, data.deltakere)}
-
-
 # ---------- Admin ----------
 
 
@@ -220,7 +192,7 @@ def endre_institusjon(iid: int, data: InstitusjonIn, db: Session = Depends(get_d
 @app.delete("/api/admin/institusjoner/{iid}")
 def slett_institusjon(iid: int, db: Session = Depends(get_db)):
     i = db.get(models.Institusjon, iid) or _404()
-    db.query(models.Besok).filter_by(institusjon_id=iid).delete()
+    db.query(models.Besokstall).filter_by(institusjon_id=iid).delete()
     db.query(models.Utfordring).filter_by(institusjon_id=iid).delete()
     db.delete(i)
     db.commit()
@@ -297,7 +269,7 @@ def generer(data: GenererIn, db: Session = Depends(get_db)):
         if eksisterende and eksisterende.status == "publisert":
             continue
         antall, begrunnelse = logic.beregn_antall(db, inst, mal, data.aar, data.uke)
-        tekst = ai.utfordringstekst(mal.tekst, antall)
+        tekst = ai.utfordringstekst(mal.tekst, antall, logic.ai_kontekst(db, inst, data.aar, data.uke))
         u = eksisterende or models.Utfordring(institusjon_id=inst.id, aar=data.aar, uke=data.uke)
         u.mal_id, u.antall, u.tekst, u.begrunnelse, u.status = (
             mal.id, antall, tekst, begrunnelse, "utkast",
@@ -314,6 +286,10 @@ def endre_utfordring(uid: int, data: UtfordringEndring, db: Session = Depends(ge
         u.antall = data.antall
     if data.tekst is not None:
         u.tekst = data.tekst
+    if data.fullfort is not None:
+        u.fullfort = data.fullfort
+    if data.fullfort_nullstill:
+        u.fullfort = None
     db.commit()
     return _utfordring_ut(db, u)
 
@@ -329,26 +305,57 @@ def publiser(data: UkeIn, db: Session = Depends(get_db)):
     return {"publisert": n}
 
 
-@app.get("/api/admin/dashboard")
-def admin_dashboard(
-    institusjon_id: Optional[int] = None,
-    uker: int = 12,
-    db: Session = Depends(get_db),
-):
-    data = logic.dashboard(db, institusjon_id, max(1, min(uker, 52)))
-    data.pop("rå")
-    return data
+# ---------- Besøkstall ----------
 
 
-@app.get("/api/admin/oppsummering")
-def admin_oppsummering(
-    institusjon_id: Optional[int] = None,
-    uker: int = 12,
-    db: Session = Depends(get_db),
-):
-    data = logic.dashboard(db, institusjon_id, max(1, min(uker, 52)))
-    data.pop("rå")
-    return {"tekst": ai.oppsummering(data)}
+@app.post("/api/admin/besokstall/import")
+async def importer_besokstall(request: Request, db: Session = Depends(get_db)):
+    innhold = await request.body()
+    if len(innhold) > 5_000_000:
+        raise HTTPException(413, "Filen er for stor (maks 5 MB)")
+    rader, feil = import_besokstall.les(innhold)
+    resultat = import_besokstall.lagre(db, rader) if rader else {
+        "nye": 0, "oppdaterte": 0, "utfordringer_vurdert": 0, "ukjente_institusjoner": [],
+    }
+    return {**resultat, "feil": feil[:50], "antall_feil": len(feil)}
+
+
+@app.get("/api/admin/besokstall")
+def list_besokstall(db: Session = Depends(get_db)):
+    liste = (
+        db.query(models.Besokstall)
+        .order_by(models.Besokstall.aar.desc(), models.Besokstall.uke.desc())
+        .limit(500)
+        .all()
+    )
+    return [
+        {
+            "id": b.id,
+            "institusjon": b.institusjon.navn,
+            "aar": b.aar,
+            "uke": b.uke,
+            "besok": b.besok,
+            "deltakere": b.deltakere,
+        }
+        for b in sorted(liste, key=lambda b: (-b.aar, -b.uke, b.institusjon.navn))
+    ]
+
+
+@app.delete("/api/admin/besokstall/{bid}")
+def slett_besokstall(bid: int, db: Session = Depends(get_db)):
+    b = db.get(models.Besokstall, bid) or _404()
+    db.delete(b)
+    db.commit()
+    return {"ok": True}
+
+
+@app.get("/api/admin/besokstall/mal.csv")
+def besokstall_mal():
+    return Response(
+        import_besokstall.MAL_CSV.encode("utf-8-sig"),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="besokstall-mal.csv"'},
+    )
 
 
 # ---------- Eksport til Google Sheets ----------

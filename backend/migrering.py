@@ -9,6 +9,18 @@ def _kolonner(engine: Engine, tabell: str) -> set:
     return {k["name"] for k in inspect(engine).get_columns(tabell)}
 
 
+def legg_til_manglende_kolonner(engine: Engine, schema: str | None) -> None:
+    """Nye kolonner som create_all ikke legger til i eksisterende tabeller."""
+    insp = inspect(engine)
+    if "utfordringer" not in insp.get_table_names(schema=schema):
+        return
+    kolonner = {k["name"] for k in insp.get_columns("utfordringer", schema=schema)}
+    if "fullfort" not in kolonner:
+        tabell = f'"{schema}".utfordringer' if schema else "utfordringer"
+        with engine.begin() as con:
+            con.execute(text(f"ALTER TABLE {tabell} ADD COLUMN fullfort BOOLEAN"))
+
+
 def migrer(engine: Engine, metadata: MetaData) -> None:
     tabeller = set(inspect(engine).get_table_names())
     har_avdelinger = "avdelinger" in tabeller
@@ -26,7 +38,7 @@ def migrer(engine: Engine, metadata: MetaData) -> None:
                     "WHERE a.institusjon_id = institusjoner.id), 10)"
                 ))
 
-    for tabell in ("besok", "utfordringer"):
+    for tabell in ("utfordringer",):
         if tabell not in tabeller or "avdeling_id" not in _kolonner(engine, tabell):
             continue
         if engine.dialect.name != "sqlite":

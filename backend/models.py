@@ -1,6 +1,4 @@
-from datetime import datetime
-
-from sqlalchemy import Column, Integer, String, Text, Date, DateTime, ForeignKey
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from database import Base
@@ -35,26 +33,22 @@ class Utfordring(Base):
     tekst = Column(Text, nullable=False)
     begrunnelse = Column(Text, default="")
     status = Column(String(20), nullable=False, default="utkast")  # utkast | publisert
+    # Satt av admin etter uka: klarte de utfordringen? None = ikke vurdert
+    fullfort = Column(Boolean, nullable=True)
 
     institusjon = relationship("Institusjon")
 
 
-class Besok(Base):
-    __tablename__ = "besok"
+class Besokstall(Base):
+    """Opplastede besøkstall per institusjon og uke (ingen personopplysninger)."""
+
+    __tablename__ = "besokstall"
 
     id = Column(Integer, primary_key=True)
     institusjon_id = Column(Integer, ForeignKey("institusjoner.id"), nullable=False)
-    dato = Column(Date, nullable=False)
-    deltakere = Column(Integer, nullable=False)
-    mvenner = Column(Integer, nullable=False, default=1)
-    aktivitet = Column(String(300), default="")
-    stemning = Column(Integer, nullable=False)  # 1-5
-    maal = Column(Text, default="")
-    maal_oppnadd = Column(String(10), default="")  # ja | delvis | nei
-    # Hvor mange som teller mot ukas utfordring (f.eks. beboere som
-    # vanligvis ikke blir med)
-    utfordring_bidrag = Column(Integer, nullable=False, default=0)
-    opprettet = Column(DateTime, default=datetime.utcnow)
+    aar = Column(Integer, nullable=False)
+    uke = Column(Integer, nullable=False)
+    besok = Column(Integer, nullable=False, default=1)  # antall besøk den uka
+    deltakere = Column(Integer, nullable=False)  # beboere som deltok totalt
 
     institusjon = relationship("Institusjon")
-

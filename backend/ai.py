@@ -1,6 +1,5 @@
 """AI-tekster via Claude. Uten ANTHROPIC_API_KEY brukes enkle maler i stedet,
 så appen fungerer fullt ut også uten AI."""
-import json
 import os
 import re
 from typing import Optional
@@ -48,60 +47,20 @@ SYSTEM = (
 )
 
 
-def utfordringstekst(mal_tekst: str, antall: int) -> str:
+def utfordringstekst(mal_tekst: str, antall: int, kontekst: str = "") -> str:
     grunn = mal_tekst.replace("{antall}", str(antall))
+    bakgrunn = (
+        f" Bakgrunn om institusjonen (bruk den til å treffe tonen, ikke gjengi tallene): {kontekst}"
+        if kontekst else ""
+    )
     tekst = _spor(
         SYSTEM,
         "Skriv én oppmuntrende setning (maks 25 ord) til M-vennene om ukas utfordring. "
-        f"Utfordringen er: «{grunn}». Tallet {antall} MÅ stå med siffer og kan ikke endres.",
+        f"Utfordringen er: «{grunn}». Tallet {antall} MÅ stå med siffer og kan ikke endres, "
+        "og ingen andre tall skal stå i teksten." + bakgrunn,
         max_tokens=1000,
     )
     # AI skal aldri endre tallet: forkast teksten hvis tallene ikke stemmer
     if tekst and re.findall(r"\d+", tekst) == [str(antall)]:
         return tekst.strip("«»\"")
     return grunn + "!"
-
-
-def konkret_maal(maal: str, aktivitet: str, deltakere: int) -> Optional[str]:
-    """Foreslår et mer konkret mål hvis målet mangler tall/tid. None = målet er fint."""
-    maal = (maal or "").strip()
-    if not maal or re.search(r"\d", maal):
-        return None
-    tekst = _spor(
-        SYSTEM,
-        "Gjør dette målet for et besøk konkret og målbart (hva, hvor mange og hvor lenge), "
-        f"maks 15 ord. Mål: «{maal}». Aktivitet: «{aktivitet or 'ukjent'}». "
-        f"Omtrent {deltakere} beboere pleier å delta.",
-        max_tokens=1000,
-    )
-    if tekst:
-        return tekst.strip("«»\"")
-    antall = max(2, deltakere or 3)
-    akt = (aktivitet or "aktiviteten").lower()
-    return f"Få minst {antall} beboere med på {akt} i 15 minutter"
-
-
-def oppsummering(data: dict) -> str:
-    tekst = _spor(
-        SYSTEM,
-        "Skriv en kort oppsummering (3–5 setninger) av tallene under for en koordinator. "
-        "Pek på hva som går bra, hvilke institusjoner som trenger oppfølging, og ett konkret råd. "
-        "Ikke finn på tall som ikke står her.\n\n" + json.dumps(data, ensure_ascii=False),
-        max_tokens=3000,
-    )
-    if tekst:
-        return tekst
-    rader = [r for r in data.get("rader", []) if r["besok"]]
-    if not rader:
-        return "Det er ikke registrert besøk i perioden ennå."
-    best = max(rader, key=lambda r: r["grad_verdi"])
-    svak = min(rader, key=lambda r: r["grad_verdi"])
-    t = {x["etikett"]: x["verdi"] for x in data["tall"]}
-    ut = (
-        f"I perioden var det i snitt {t['Deltakere per besøk']} deltakere per besøk, "
-        f"og snittstemningen var {t['Snittstemning']} av 5. "
-        f"{best['navn']} har høyest deltakelsesgrad ({best['grad']})."
-    )
-    if svak is not best:
-        ut += f" {svak['navn']} har lavest ({svak['grad']}) og kan trenge ekstra oppfølging."
-    return ut

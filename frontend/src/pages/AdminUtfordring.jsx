@@ -13,6 +13,12 @@ function Utkast({ u, onLagret }) {
     onLagret(await api.endreUtfordring(u.id, { antall, tekst }));
   }
 
+  async function vurder(verdi) {
+    onLagret(await api.endreUtfordring(
+      u.id, verdi === null ? { fullfort_nullstill: true } : { fullfort: verdi }
+    ));
+  }
+
   return (
     <article className="kort skygge">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
@@ -32,8 +38,16 @@ function Utkast({ u, onLagret }) {
       </div>
       <p className="hjelp" style={{ marginTop: 12 }}>
         <strong style={{ color: "var(--tekst)" }}>Begrunnelse:</strong> {u.begrunnelse}
-        {u.status === "publisert" && ` · Fremgang: ${u.fremgang} av ${u.antall}`}
       </p>
+      {u.status === "publisert" && (
+        <div className="rad" style={{ marginTop: 12 }} role="group" aria-label={`Klarte ${u.institusjon} utfordringen?`}>
+          <span style={{ fontWeight: 700 }}>Klarte de det?</span>
+          <button type="button" className={`knapp${u.fullfort === true ? "" : " sekundar"}`} aria-pressed={u.fullfort === true}
+            onClick={() => vurder(u.fullfort === true ? null : true)}>Klarte det</button>
+          <button type="button" className={`knapp${u.fullfort === false ? "" : " sekundar"}`} aria-pressed={u.fullfort === false}
+            onClick={() => vurder(u.fullfort === false ? null : false)}>Klarte det ikke</button>
+        </div>
+      )}
       {endret && (
         <div className="rad" style={{ marginTop: 12 }}>
           <button type="button" className="knapp" onClick={lagre}>Lagre endring</button>
@@ -91,7 +105,7 @@ export default function AdminUtfordring() {
       <div>
         <h1 style={{ fontSize: 32 }}>Ukas utfordring</h1>
         <p className="ingress">
-          Antallet beregnes i kode ut fra størrelse, deltakelse de siste 6 ukene og historikk. AI skriver teksten, men endrer aldri tallet.
+          Antallet beregnes i kode ut fra institusjonens størrelse, deltakelsen i de opplastede besøkstallene og om de klarte de to siste utfordringene. AI skriver teksten, men endrer aldri tallet.
         </p>
       </div>
 

@@ -8,7 +8,7 @@ export default function Start() {
       </div>
       <h1 style={{ marginTop: 32, fontSize: 34, lineHeight: 1.1 }}>Hei, Besøksleder!</h1>
       <p style={{ marginTop: 12, fontSize: 18, lineHeight: 1.55, color: "var(--dempet)" }}>
-        Her ser du ukas utfordring og skriver stemningsrapport for besøket.
+        Her ser du ukas utfordring. Ta den med deg på besøket!
       </p>
       <div className="stakk" style={{ marginTop: 40 }}>
         <Link to="/mvenn" className="knapp stor">Gå inn som M-venn</Link>

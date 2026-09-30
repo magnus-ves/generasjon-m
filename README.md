@@ -3,17 +3,25 @@
 App for M-venner som besøker beboere på institusjoner, bygget etter designet
 «Generasjon M – M-venn-appen».
 
-- **M-venn (mobil):** velg institusjon, se ukas utfordring med
-  fremgang, og registrer besøk (deltakere, M-venner, aktivitet, stemning, mål
-  og om målet ble nådd). Er målet vagt, foreslås et mer konkret mål.
-- **Admin (desktop):** dashboard med nøkkeltall, grafer og sammenligning av
-  institusjoner (+ AI-oppsummering), generering og publisering av ukas utfordring,
-  utfordringsmaler og institusjoner.
+- **M-venn (mobil):** velg institusjon og se ukas utfordring – antall og tekst
+  å ta med seg på besøket.
+- **Admin (desktop):** generer, rediger og publiser ukas utfordring per
+  institusjon, marker om de klarte den, og administrer utfordringsmaler,
+  institusjoner og besøkstall. Data kan hentes inn i Google Sheets.
 
 Antallet i ukas utfordring beregnes i kode (`backend/logic.py`) ut fra
-institusjonens størrelse, deltakelse de siste 6 ukene og om de to forrige
-utfordringene ble fullført. AI skriver bare teksten – en AI-tekst som ikke
-inneholder nøyaktig det beregnede tallet forkastes.
+institusjonens størrelse, deltakelsen de siste 6 ukene (fra opplastede
+besøkstall) og om de klarte de to forrige utfordringene. AI skriver bare
+teksten, med besøkstallene som bakgrunn – en AI-tekst som ikke inneholder
+nøyaktig det beregnede tallet forkastes.
+
+## Besøkstall
+
+Last opp en CSV-fil under **Admin → Besøkstall** (mal kan lastes ned der).
+Kolonner: `Institusjon`, `År`, `Uke`, `Besøk`, `Deltakere` og valgfritt
+`Klarte utfordringen` (ja/nei). I stedet for `År`/`Uke` kan filen ha en
+`Dato`-kolonne med én rad per besøk. Semikolon og komma fungerer begge, og
+samme uke kan lastes opp på nytt – da erstattes tallene.
 
 ## Kjøre lokalt
 
@@ -41,7 +49,7 @@ over.
 ## Google Sheets
 
 Appen leverer tre CSV-tabeller som Google Sheets henter med
-`=IMPORTDATA("…")`: alle besøk, nøkkeltall per institusjon og ukas
-utfordringer. Arket oppdaterer seg selv (Google henter på nytt omtrent hver
+`=IMPORTDATA("…")`: besøkstall per uke, nøkkeltall per institusjon og
+ukas utfordringer. Arket oppdaterer seg selv (Google henter på nytt omtrent hver
 time). Sett `EKSPORT_NOKKEL`, og kopier ferdige formler fra
 **Admin → Google Sheets**.

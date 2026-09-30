@@ -16,7 +16,7 @@ export default function AdminLogin() {
     setSender(false);
     if (ok) {
       lagring.settAdminKode(kode || "åpen");
-      navigate("/admin/dashboard");
+      navigate("/admin/utfordring");
     } else {
       setFeil(true);
     }
