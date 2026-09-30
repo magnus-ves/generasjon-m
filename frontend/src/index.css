@@ -1,0 +1,308 @@
+:root {
+  --primar: #1e5aa8;
+  --primar-mork: #143f78;
+  --bakgrunn: #fbf8f3;
+  --flate: #ffffff;
+  --flate-myk: #f3eee6;
+  --kant: #e4ddd2;
+  --kant-stiplet: #c9bfae;
+  --tekst: #1b1f24;
+  --dempet: #4f5663;
+  --ok: #1f7a4d;
+  --feil: #b42318;
+  --aksent: #f08a4b;
+  --skygge: 0 1px 2px rgba(20, 30, 50, 0.06), 0 2px 8px rgba(20, 30, 50, 0.06);
+  font-family: Nunito, ui-sans-serif, system-ui, sans-serif;
+  color: var(--tekst);
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; background: var(--bakgrunn); }
+
+a { color: var(--primar); }
+a:hover { color: var(--primar-mork); }
+
+h1 { margin: 0; font-weight: 900; letter-spacing: -0.02em; }
+h2 { margin: 0; font-weight: 900; }
+p { margin: 0; }
+
+button, input, select, textarea { font-family: inherit; }
+
+/* ---------- Mobil (M-venn) ---------- */
+
+.mobil {
+  max-width: 480px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 16px 20px 32px;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-plass {
+  border: 2px dashed var(--kant-stiplet);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dempet);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.knapp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 16px;
+  border: none;
+  background: var(--primar);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+.knapp:hover { background: var(--primar-mork); color: #fff; }
+.knapp:disabled { opacity: 0.6; cursor: default; }
+.knapp.stor { min-height: 60px; font-size: 18px; }
+.knapp.sekundar {
+  background: var(--flate);
+  border: 2px solid var(--kant);
+  color: var(--primar);
+}
+.knapp.sekundar:hover { background: var(--flate-myk); color: var(--primar-mork); }
+.knapp.fare { background: var(--flate); border: 2px solid var(--kant); color: var(--feil); }
+
+.lenkeknapp {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--primar);
+  font-weight: 700;
+  font-size: 16px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.tilbake {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  font-weight: 700;
+  font-size: 16px;
+  text-decoration: none;
+}
+
+.felt { display: flex; flex-direction: column; gap: 6px; }
+.felt > label, .felt > legend, legend.etikett {
+  font-weight: 700;
+  font-size: 16px;
+  padding: 0;
+}
+.hjelp { color: var(--dempet); font-size: 16px; line-height: 1.45; }
+
+.inndata {
+  min-height: 48px;
+  border-radius: 12px;
+  border: 2px solid var(--kant);
+  background: var(--flate);
+  padding: 0 16px;
+  font-size: 16px;
+  width: 100%;
+  color: var(--tekst);
+}
+textarea.inndata { padding: 12px 16px; min-height: 80px; resize: vertical; }
+.inndata:focus { outline: 3px solid color-mix(in srgb, var(--primar) 35%, transparent); border-color: var(--primar); }
+.inndata.feil { border-color: var(--feil); }
+
+fieldset { margin: 0; padding: 0; border: none; min-width: 0; }
+
+.teller { display: flex; gap: 8px; align-items: center; }
+.teller button {
+  width: 56px;
+  min-height: 48px;
+  border-radius: 16px;
+  border: 2px solid var(--kant);
+  background: var(--flate);
+  color: var(--primar);
+  font-size: 24px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.teller input { width: 96px; text-align: center; font-size: 20px; font-weight: 800; padding: 0; }
+
+.stemninger { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.stemning {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 0;
+  border-radius: 16px;
+  border: 2px solid var(--kant);
+  background: var(--flate);
+  color: var(--dempet);
+  cursor: pointer;
+}
+.stemning span { font-size: 14px; font-weight: 700; color: var(--tekst); line-height: 1.15; text-align: center; }
+.stemning[aria-pressed="true"] { border-color: var(--primar); background: var(--flate-myk); color: var(--primar); }
+
+.valg3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.valg {
+  min-height: 52px;
+  border-radius: 16px;
+  border: 2px solid var(--kant);
+  background: var(--flate);
+  color: var(--tekst);
+  font-weight: 800;
+  font-size: 16px;
+  cursor: pointer;
+}
+.valg[aria-pressed="true"] { background: var(--primar); border-color: var(--primar); color: #fff; }
+
+.forslag {
+  margin-top: 6px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 2px solid var(--primar);
+  background: var(--flate-myk);
+}
+.forslag-tittel { font-weight: 800; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+
+.melding {
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 2px solid;
+  background: var(--flate);
+  font-weight: 700;
+  font-size: 16px;
+}
+.melding.ok { border-color: var(--ok); color: var(--ok); }
+.melding.feil { border-color: var(--feil); color: var(--feil); }
+
+.utfordring {
+  padding: 24px;
+  border-radius: 16px;
+  background: var(--primar);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(20, 30, 50, 0.06), 0 8px 24px rgba(20, 30, 50, 0.08);
+}
+.utfordring .overlinje { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; }
+.utfordring .tall { font-size: 96px; line-height: 1; font-weight: 900; }
+.framdrift { margin-top: 8px; height: 12px; border-radius: 6px; background: rgba(255, 255, 255, 0.25); }
+.framdrift > div { height: 12px; border-radius: 6px; background: #fff; }
+
+.kort {
+  padding: 20px;
+  border-radius: 16px;
+  background: var(--flate);
+  border: 1px solid var(--kant);
+}
+.kort.skygge { box-shadow: var(--skygge); }
+
+.stakk { display: flex; flex-direction: column; gap: 12px; }
+.rad { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+/* ---------- Admin ---------- */
+
+.admin {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+}
+.admin nav {
+  background: var(--flate);
+  border-right: 1px solid var(--kant);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.admin nav a {
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--tekst);
+  text-decoration: none;
+}
+.admin nav a:hover { background: var(--flate-myk); }
+.admin nav a.active { background: var(--primar); color: #fff; }
+.admin main {
+  padding: 32px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+.ingress { font-size: 18px; color: var(--dempet); margin-top: 8px; }
+
+.filtre { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.nokkeltall { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.nokkeltall .kort { padding: 18px; }
+.nokkeltall .etikett { color: var(--dempet); font-weight: 600; font-size: 15px; }
+.nokkeltall .verdi { margin-top: 4px; font-size: 30px; font-weight: 900; }
+.nokkeltall .hint { margin-top: 2px; color: var(--dempet); font-size: 14px; }
+.diagrammer { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.diagrammer svg { width: 100%; height: auto; display: block; }
+.undertekst { color: var(--dempet); font-size: 15px; margin-top: 2px; }
+.forklaring { margin-top: 10px; display: flex; gap: 16px; font-size: 14px; font-weight: 700; }
+.forklaring span { display: flex; align-items: center; gap: 6px; }
+
+.tabell {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--flate);
+  border: 1px solid var(--kant);
+  font-size: 16px;
+  text-align: left;
+}
+.tabell th { padding: 12px 16px; font-weight: 600; color: var(--dempet); }
+.tabell td { padding: 10px 16px; border-top: 1px solid var(--kant); }
+.tabell td:first-child { font-weight: 800; }
+
+.faner { display: inline-flex; padding: 4px; border-radius: 16px; background: var(--flate-myk); }
+.faner button {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--tekst);
+  cursor: pointer;
+}
+.faner button[aria-selected="true"] { background: var(--primar); color: #fff; }
+
+.merke {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--flate-myk);
+  font-size: 14px;
+  font-weight: 800;
+}
+.merke.publisert { background: #e3f1e9; color: var(--ok); }
+
+.utkast-grid { margin-top: 12px; display: grid; grid-template-columns: 110px 1fr; gap: 12px; }
+.utkast-grid .inndata.antall { text-align: center; font-size: 26px; font-weight: 900; min-height: 52px; padding: 0; }
+
+.ai-boks { white-space: pre-wrap; line-height: 1.55; font-size: 16px; }
+
+@media (max-width: 900px) {
+  .admin { grid-template-columns: 1fr; }
+  .admin nav { flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--kant); }
+  .admin main { padding: 20px 16px; }
+  .filtre, .diagrammer { grid-template-columns: 1fr; }
+  .nokkeltall { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tabell-rulle { overflow-x: auto; }
+}
