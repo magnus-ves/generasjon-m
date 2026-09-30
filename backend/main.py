@@ -14,12 +14,14 @@ import ai
 import eksport
 import logic
 import models
-from database import MIDLERTIDIG_DATABASE, SQLALCHEMY_DATABASE_URL, SessionLocal, engine, get_db
+from database import SCHEMA, SCHEMA_FEIL, MIDLERTIDIG_DATABASE, SQLALCHEMY_DATABASE_URL, SessionLocal, engine, get_db
 from migrering import migrer
 
-_db_init_error = None
+_db_init_error = SCHEMA_FEIL
 try:
-    migrer(engine, models.Base.metadata)
+    if not SCHEMA:
+        # Eget Postgres-skjema starter tomt; bare SQLite kan ha gamle tabeller
+        migrer(engine, models.Base.metadata)
     models.Base.metadata.create_all(bind=engine)
     with SessionLocal() as _db:
         if not _db.query(models.Utfordringsmal).count():

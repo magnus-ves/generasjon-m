@@ -30,7 +30,7 @@ cd frontend && npm install && npm run dev   # http://localhost:5173
 | `ANTHROPIC_API_KEY` | Slår på AI-tekster (Claude). Uten den brukes enkle maltekster. |
 | `EKSPORT_NOKKEL` | Slår på eksport til Google Sheets. En lang, tilfeldig tekst – den står i eksport-lenkene. |
 | `CLAUDE_MODEL` | Valgfritt, standard `claude-opus-5-5`. |
-| `DATABASE_URL` / `POSTGRES_URL` | Postgres i produksjon. Lokalt brukes SQLite. |
+| `DATABASE_URL` / `POSTGRES_URL` | Postgres i produksjon (settes automatisk av Supabase/Neon-integrasjonen i Vercel). Tabellene legges i skjemaet `generasjon_m` (kan endres med `DB_SCHEMA`), så de ikke kolliderer med andre tabeller. Lokalt brukes SQLite. |
 
 ## Publisere (Vercel)
 

@@ -1,7 +1,7 @@
 import os
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
-from sqlalchemy import create_engine
+from sqlalchemy import MetaData, create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 # Lokalt: SQLite-fil. I produksjon (Vercel): kobler til Postgres, siden
@@ -68,7 +68,23 @@ engine = create_engine(
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-Base = declarative_base()
+# I Postgres ligger appens tabeller i et eget skjema, så de ikke kolliderer
+# med andre tabeller i samme database (f.eks. en delt Supabase-database).
+SCHEMA = (
+    os.environ.get("DB_SCHEMA", "generasjon_m")
+    if SQLALCHEMY_DATABASE_URL.startswith("postgresql")
+    else None
+)
+
+SCHEMA_FEIL = None
+if SCHEMA:
+    try:
+        with engine.begin() as _con:
+            _con.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{SCHEMA}"'))
+    except Exception as e:  # vises via /api/health i stedet for å krasje appen
+        SCHEMA_FEIL = f"{type(e).__name__}: {e}"
+
+Base = declarative_base(metadata=MetaData(schema=SCHEMA))
 
 
 def get_db():
