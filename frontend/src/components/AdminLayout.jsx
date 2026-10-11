@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Logo from "./Logo.jsx";
 import { Navigate, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { api, lagring } from "../api.js";
 
@@ -26,7 +27,7 @@ export default function AdminLayout() {
   return (
     <div className="admin">
       <nav aria-label="Adminmeny">
-        <div className="logo-plass" style={{ width: 150, height: 40, fontSize: 12, marginBottom: 20 }}>[Logo]</div>
+        <div style={{ margin: "4px 0 24px 8px" }}><Logo storrelse={17} /></div>
         <NavLink to="/admin/utfordring">Ukas utfordring</NavLink>
         <NavLink to="/admin/maler">Utfordringsmaler</NavLink>
         <NavLink to="/admin/institusjoner">Institusjoner</NavLink>

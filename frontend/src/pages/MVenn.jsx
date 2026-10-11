@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Logo from "../components/Logo.jsx";
 import { Link } from "react-router-dom";
 import { api, lagring } from "../api.js";
 import { Gnist } from "../components/Ikoner.jsx";
@@ -64,7 +65,7 @@ export default function MVenn() {
 
   return (
     <div className="mobil">
-      <Link to="/" className="logo-plass" style={{ width: 128, height: 36, fontSize: 12 }}>[Logo]</Link>
+      <Link to="/" style={{ alignSelf: "flex-start", textDecoration: "none" }}><Logo storrelse={18} /></Link>
       {!instId ? (
         <>
           {feil && <div role="alert" className="melding feil" style={{ marginTop: 20 }}>{feil}</div>}

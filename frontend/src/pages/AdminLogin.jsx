@@ -1,3 +1,4 @@
+import Logo from "../components/Logo.jsx";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, lagring } from "../api.js";
@@ -24,9 +25,7 @@ export default function AdminLogin() {
 
   return (
     <div className="mobil" style={{ justifyContent: "center", padding: "40px 20px" }}>
-      <div className="logo-plass" style={{ alignSelf: "center", width: 180, height: 60 }}>
-        [Generasjon M-logo]
-      </div>
+      <div style={{ alignSelf: "center" }}><Logo storrelse={24} /></div>
       <form onSubmit={loggInn} className="kort skygge stakk" style={{ marginTop: 32, padding: 24, gap: 16 }}>
         <h1 style={{ fontSize: 24, display: "flex", alignItems: "center", gap: 8 }}>
           <Lås />Admin

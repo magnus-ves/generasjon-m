@@ -1,11 +1,10 @@
+import Logo from "../components/Logo.jsx";
 import { Link } from "react-router-dom";
 
 export default function Start() {
   return (
-    <div className="mobil" style={{ justifyContent: "center" }}>
-      <div className="logo-plass" style={{ width: 200, height: 72 }}>
-        [Generasjon M-logo]
-      </div>
+    <div className="mobil dekor-bakgrunn" style={{ justifyContent: "center" }}>
+      <Logo storrelse={26} />
       <h1 style={{ marginTop: 32, fontSize: 34, lineHeight: 1.1 }}>Hei, Besøksleder!</h1>
       <p style={{ marginTop: 12, fontSize: 18, lineHeight: 1.55, color: "var(--dempet)" }}>
         Her ser du ukas utfordring. Ta den med deg på besøket!
